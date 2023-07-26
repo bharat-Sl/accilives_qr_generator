@@ -3,38 +3,30 @@ import 'dart:ui';
 import 'package:screenshot/screenshot.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
-shareQrCode(ScreenshotController screenshotController, String name) async {
+downloadQrCode(Uint8List screenshot, String name) async {
   var status = await Permission.storage.status;
-
   if (!status.isGranted) {
     await Permission.storage.request();
+    return "Storage permission not given! Please give permission from settings and if allowed, ignore the message";
   } else {
-    final directory = (await getApplicationDocumentsDirectory()).path;
-    screenshotController.capture().then((Uint8List? image) async {
-      if (image != null) {
+    final path = Directory("/storage/emulated/0/Download/PetQR");
+    if ((await path.exists())) {
+      final directory = "/storage/emulated/0/Download/PetQR";
+      if (screenshot != null) {
         try {
-          String fileName = DateTime.now().microsecondsSinceEpoch.toString();
-          final imagePath = await File('$directory/$fileName.png').create();
+          final imagePath = await File('$directory/$name.png').create();
           if (imagePath != null) {
-            await imagePath.writeAsBytes(image);
-            Directory tempDir = await getApplicationDocumentsDirectory();
-            String tempPath = tempDir.path;
-            var filePath = tempPath + '/$name';
-
-            // the data
-            var bytes = ByteData.view(image.buffer);
-            final buffer = bytes.buffer;
-            // save the data in the path
-            return File(filePath).writeAsBytes(
-                buffer.asUint8List(image.offsetInBytes, image.lengthInBytes));
+            await imagePath.writeAsBytes(screenshot);
+            return null;
           }
-        } catch (error) {}
+        } catch (error) {
+          return "Some error occured! Contact IT department to know further details";
+        }
       }
-    }).catchError((onError) {
-      print('Error --->> $onError');
-    });
+    } else {
+      path.create();
+      return "Folder not found! Creating folder now, please retry again.";
+    }
   }
 }
